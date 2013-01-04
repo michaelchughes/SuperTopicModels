@@ -1,0 +1,23 @@
+SuperTopicModels : toolbox for using LDA and sLDA in Matlab for regression/classification
+Website: http://michaelchughes.github.com/
+Author:  Mike Hughes (www.michaelchughes.com)
+Please email all comments/questions to mike <AT> michaelchughes.com
+
+This toolbox provides code for running Markov chain Monte Carlo (MCMC) posterior
+inference for a variety of topic models, including latent dirichlet allocation (LDA)
+and *supervised* latent dirichlet allocation (sLDA).    
+
+The repository is organized as follows:  
+  code/ contains relevant Matlab code. This should be the working dir in Matlab.
+        within code/, you can find a fast intro script in code/demo/EasyDemo.m
+  doc/  contains human-readable documentation.
+        QuickStartGuide.pdf in particular describes how to configure the code.
+  data/ contains one example dataset
+        See the demos for how to run posterior inference on this data. 
+              
+Look for additional documentation and occasional updates on github:
+   https://github.com/michaelchughes/NPBayesHMM/
+
+This software is released under the Simple Public License 2.0, a permissive, 
+copyleft license.  Please see the LICENSE file for details.
+
