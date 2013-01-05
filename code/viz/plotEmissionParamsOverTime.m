@@ -22,7 +22,7 @@ if ~isempty( Truth )
 end
 
 hh = figure();
-set( gcf, 'Units', 'normalized', 'Position', [0.4 0.6 0.5 0.3] );
+set( gcf, 'Units', 'normalized', 'Position', [0.1 0.6 0.5 0.3] );
 for iter = X.iters.Psi
     plotEmissionParams( jobID, taskID, iter, 'SamplerOutput', X, 'est_labels', est_labels, 'figHandle', hh );
     

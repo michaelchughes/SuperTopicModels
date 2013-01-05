@@ -31,7 +31,7 @@ dataParams = {'D', 500, 'Nd', 100, 'K',10};
 fprintf( 'Visualizing true topic-word distributions and example docs...\n');
 % Visualize the 10 true topics
 figure( 'Name', 'True Topic-Word Distributions');
-set( gcf, 'Units', 'normalized', 'Position', [0.1 0.6 0.5 0.3] );
+set( gcf, 'Units', 'normalized', 'Position', [0.5 0.6 0.5 0.3] );
 for kk = 1:10
     subplot( 2, 5, kk);
     sqIm = reshape( Truth.TopicObsPr(kk,:), 5,5);
@@ -42,7 +42,7 @@ colormap hot;
 
 % Visualize some example documents
 figure( 'Name', 'Example Documents');
-set( gcf, 'Units', 'normalized', 'Position', [0.1 0.2 0.5 0.3] );
+set( gcf, 'Units', 'normalized', 'Position', [0.5 0.2 0.5 0.3] );
 for dd = 1:10
     subplot( 2, 5, dd);
     wCounts = histc( Data(dd).words, 1:25 );
@@ -71,7 +71,7 @@ Nkw = Psi.TWSuffStats.Nkw;
 
 EstTopicObsPr = bsxfun( @rdivide, Nkw, sum(Nkw,2) );
 figure( 'Name', 'Recovered Topic-Word Distributions');
-set( gcf, 'Units', 'normalized', 'Position', [0.1 0.6 0.5 0.3] );
+set( gcf, 'Units', 'normalized', 'Position', [0.4 0.55 0.5 0.3] );
 for kk = 1:10
     subplot( 2, 5, kk);
     sqIm = reshape( EstTopicObsPr(kk,:), 5,5);
