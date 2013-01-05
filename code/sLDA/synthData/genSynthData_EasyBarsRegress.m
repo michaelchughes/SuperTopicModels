@@ -1,4 +1,4 @@
-function [Data, Truth, Params] = genSynthData_EasyBarsSuperLDA( dataParams )
+function [Data, Truth, Params] = genSynthData_EasyBarsRegress( dataParams )
 
 defs.ALPH = 0.25;
 defs.D = 1000;
@@ -59,14 +59,17 @@ end
 Truth.TopicObsPr = ObsPr;
 Truth.eta = eta;
 
-barZ = bsxfun( @rdivide, Ndk, sum(Ndk,2) );
-model = defaultModelParams_sLDA( Data );
-for a = 1:100
-[eta,lambda] = sampleRegressionParams_sLDA( Data, barZ, eta, lambda, model.RegM);
-lam(a) = lambda;
-EE(:,a) = eta;
-end
-eta
-lambda
-plot(lam)
-plot( EE' );
+
+
+% DOUBLE CHECK: Can we recover the regression params?? yes
+% barZ = bsxfun( @rdivide, Ndk, sum(Ndk,2) );
+% model = defaultModelParams_sLDA( Data );
+% ys = getRealValuedRegressionOutcomes( Data, barZ, eta, model );
+% 
+% for a = 1:100
+% [eta,lambda] = sampleRegressionParams_sLDA( ys, barZ, eta, lambda, model.RegM);
+% lam(a) = lambda;
+% EE(:,a) = eta;
+% end
+% plot(lam)
+% plot( EE' );

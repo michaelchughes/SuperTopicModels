@@ -33,14 +33,17 @@ for dd = 1:D
         yHats = zeros( testP.Niter - BURNiter, 1);
     end
     for rr = 1:testP.Niter
-        [zs, curNdk, Nkw, Nk] = sampleTopicsForDoc_LDA_DirMult(...
+        permIDs = randperm( length(zs) );
+        randChoices = rand(1, length(zs) );
+        [zs, curNdk, Nkw, Nk] = sampleTopicsForDoc_LDA_MEX(...
             Data(dd).words, zs, ...
             curNdk', Nkw, Nk,  ...
-            Psi.alpha, Psi.beta );
+            Psi.alpha, Psi.beta, ...
+            permIDs, randChoices);
         
         if rr > BURNiter
             rc = rc+1;
-            yHats( rc, : ) = curNdk'*Psi.eta / length(zs);
+            yHats( rc, : ) = curNdk(:)'*Psi.eta / length(zs);
         end
     end
     

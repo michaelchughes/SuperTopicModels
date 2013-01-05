@@ -1,6 +1,6 @@
 function [Data, Truth, Params] = genSynthData_EasyBarsLDA( dataParams )
 
-defs.alph = 0.25;
+defs.alph = 0.1;
 defs.D = 100;
 defs.Nd = 100;
 defs.K = 10;

@@ -56,7 +56,7 @@ testDefs = defaultTestParams_sLDA();
 testParams = updateParamsWithUserInput( testDefs, testP);
 
 % ================================================= LOAD DATA
-[Data, TestData, Truth] = loadBagOfWordsData( dataParams, testP);
+[Data, TestData, Truth] = loadBagOfWordsData( dataParams, testP );
 
 model = defaultModelParams_LDA( Data );
 model = updateParamsWithUserInput( model, modelParams );

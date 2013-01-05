@@ -52,10 +52,10 @@ for n=n+1:algParams.Niter
             if n==1 pc =0; end
             pc = pc+1;
             
-            Psi = trainRegressionModel_LDA( Psi, Data, model, testP);
+            regPsi = trainRegressionModel_LDA( Psi, Data, model, testP);
             
-            Predict.train = predict_LDA( Psi, Data, model, testP ); 
-            Predict.test  = predict_LDA( Psi, TestData, model, testP ); 
+            Predict.train = predict_LDA( regPsi, Data, model, testP ); 
+            Predict.test  = predict_LDA( regPsi, TestData, model, testP ); 
             
             PredictHist.iters(pc) = n;
             PredictHist.train(pc) = Predict.train;

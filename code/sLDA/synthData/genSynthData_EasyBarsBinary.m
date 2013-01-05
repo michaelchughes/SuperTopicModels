@@ -1,7 +1,7 @@
-function [Data, Truth, Params] = genSynthData_EasyBarsBinaryLDA( dataParams )
+function [Data, Truth, Params] = genSynthData_EasyBarsBinary( dataParams )
 
-defs.ALPH = 0.25;
-defs.D = 1000;
+defs.ALPH = 0.1;
+defs.D = 500;
 defs.Nd = 100;
 defs.K = 10;
 defs.V = 25;
