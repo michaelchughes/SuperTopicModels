@@ -14,13 +14,18 @@ reset( RandStream.getGlobalStream(), 0);
 
 Truth = [];
 TestData = [];
-DATA_DIR = 'data/';
+
 dataName = dataParams{1};
 
-matFileList = dir( fullfile(DATA_DIR, dataName, '*.mat') );
+if dataName(1) ~= filesep
+    DATA_DIR = 'data/';
+    matFilePath = fullfile(DATA_DIR, dataName);
+else
+    matFilePath = dataName;
+end
 
 dataN = lower(dataName);
-if ~isempty( strfind( dataN, 'toy' ) ) ||  ~isempty( strfind(dataN, 'bars' ))
+if ~isempty( strfind(dataN, 'bars' ))
     genFunction = eval( ['@genSynthData_' dataName] );
     [Data, Truth] = genFunction( dataParams(2:end) );
     
@@ -28,9 +33,28 @@ if ~isempty( strfind( dataN, 'toy' ) ) ||  ~isempty( strfind(dataN, 'bars' ))
         [TestData, TestTruth] = genFunction( testParams );
     end
     
-elseif ~isempty( matFileList )
-    Data = load(     fullfile(DATA_DIR, dataName, matFileList(1).name ) );
+elseif ~isempty( matFilePath )
+    Data = load(  matFilePath );
     Data = Data.Data;
+    
+    if isnumeric( Data )
+       Dstruct = struct();
+       D = size( Data,1);
+       V = size( Data,2);
+       for dd = 1:D
+          ws = [];
+          for vv = 1:V
+            if Data(dd,vv) > 0  
+              ws = [ws repmat(vv, 1, Data(dd,vv))];
+            end            
+          end
+          Dstruct(dd).words = ws;
+       end
+       
+       Data = Dstruct;
+        
+    end
+    
 else
     error(['Dataset ' dataName ' not found.'] );
 end
@@ -39,3 +63,5 @@ end
 % ---------------------------------------------------------  Reset stream
 curStream = RandStream.getDefaultStream();
 curStream.State = entryState;
+
+end

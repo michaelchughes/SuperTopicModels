@@ -1,6 +1,8 @@
 function Y = mv_randn_trunc( mu, d, nSamples)
 %  Draw vector y from truncated normal distribution
 %    y ~  N( mu, eye(D) )  restricted s.t.  y(d) >= y(d') for all dims d'
+% USAGE
+%   Y = mv_randn_trunc( [0;0], 1, 10000);
 % INPUTS
 %   mu : Dx1 col vector indicating mean of the target Normal distribution
 %   d  : integer index of dimension (1 <= d <= D) that should be biggest

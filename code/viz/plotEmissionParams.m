@@ -41,6 +41,7 @@ for kk = 1:K
 end
 
 % Align to true topics
+est_labels = Prefs.est_labels;
 if Prefs.doAlign
     if isempty( Prefs.est_labels )
         INFO = loadSamplerInfo(jobID, taskID );
@@ -54,9 +55,10 @@ if Prefs.doAlign
             end
             est_labels = assignmentoptimal( Dist' );
         end
-    else
-        est_labels = Prefs.est_labels;
     end
+end
+if isempty( est_labels )
+   est_labels = 1:K; 
 end
 
 if isempty( Prefs.figHandle )
@@ -69,7 +71,11 @@ end
 
 for kk = 1:K
     subplot( R, C, est_labels(kk) );
-    sqIm = reshape( Phi(kk,:), sqrt(V), sqrt(V) );
+    if mod( V, sqrt(V) ) == 0
+        sqIm = reshape( Phi(kk,:), sqrt(V), sqrt(V) );
+    else
+        sqIm = Phi(kk,:);
+    end
     imagesc( sqIm, [0 .5] );
     
     if isfield( Psi, 'eta')
