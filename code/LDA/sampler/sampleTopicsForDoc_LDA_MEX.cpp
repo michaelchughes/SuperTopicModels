@@ -225,8 +225,6 @@ void sampleTopicsForDoc( mxArray *Terms, mxArray *Topics, \
       mexErrMsgTxt( "   somethings not right here.");
       return;
     }*/
-    
-
 
   delete [] ps;
   ps = NULL;

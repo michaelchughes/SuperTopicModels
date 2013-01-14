@@ -1,20 +1,34 @@
 /*
- * sampleTopicsForDoc_LDA_DirMult.cpp
+ * randn_trunc_MEX.cpp
  DESCRIPTION  -----------------------------------------------------
    MEX function for sampling from a 1D truncated normal distribution
-       y ~ Normal( mu, sigma ) restricted s.t.
+      y ~ Normal( mean=mu, var=sigma^2 ) restricted s.t.
              y <=0  if doA=0
-             y  >0  if doA=1
+             y  >0  if doA=1      where y is a scalar real
+ INPUT   ------------------------------------------------------
+     mu    :  scalar real mean for the distribution
+                 (before truncation)
+    sigma  :  scalar positive *standard deviation* for distribution
+                 (before truncation)
+    doA    :  binary flag
+                1 := enforce y <=0 (truncate from above)
+                0 := enforce y > 0 (truncate from below)
+    Nsamps :  positive integer, number of desired samples for y
+    SEED   :  integer seed for random number generator
+ OUTPUTS    -------------------------------------------------------
+    ys     :  (Nx1) Matlab vector of indep. draws from 1D truncated normal
  METADATA  --------------------------------------------------------
    Author: Mike Hughes ( mhughes@cs.brown.edu )
    Date:  11 January 2013
- INPUT   ------------------------------------------------------
- 
-    SEED   :  Integer seed for random number generator
- OUTPUTS    -------------------------------------------------------
-    ys     :  (Nx1) Matlab vector of 
  COMPILATION ------------------------------------------------------
-   mex -I<path/to>/SuperTopics/rndgen/ sampleTopicsForDoc_LDA_DirMult.cpp
+   mex -I<path/to>/boost/    \
+        randn_trunc_MEX.cpp
+   relies on mersenneTwister2002.c in same directory when mexified.
+ REFERENCES          ----------------------------------------------
+   http://web.michaelchughes.com/research/sampling-from-truncated-normal
+ DEPENDENCIES       -----------------------------------------------
+   Boost : trustworthy implementation of math special functions
+               erf/erfc/inverf for use in approximating NormalCDF
  ACKNOWLEDGEMENTS   -----------------------------------------------
    Makoto Matsumoto and Takuji Nishimura for excellent basic rand generator
    see  ( mersenneTwister2002.c ) for details
@@ -61,8 +75,12 @@ double mynormcdf( double );
 
 /* =================================================================
  *                    GATEWAY FUNCTION
- * Syntax:
-
+ * Matlab Syntax:
+      y ~ randn_trunc_MEX( mu, sigma, doA, Nsamps, seed )
+   Requires 5 input args, 1 output arg
+   This inputs are given macro names like "y_OUT" and "mu_IN"
+     in the definitions at the top of this code file
+     , which are much more readable than prhs[0] or plhs[0]
  * =================================================================
  */
 void mexFunction (int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[]) {
@@ -79,8 +97,7 @@ void mexFunction (int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[]) {
   int Nsamps = mxGetScalar( Nsamps_IN );
   int SEED   = mxGetScalar( SEED_IN );
 
-  // Initialize random seed --------------------------------------------
-  init_genrand( SEED );
+  init_genrand( SEED ); // call to setup our PRNG: mersenneTwister2002.c
 
   y_OUT = mxCreateDoubleMatrix(Nsamps,1,mxREAL);
   double *ys = mxGetPr( y_OUT );
@@ -96,6 +113,18 @@ void mexFunction (int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[]) {
   }
 }
 
+/* =================================================================
+ * GENERIC SAMPLING FROM THE 1D NORMAL DISTRIBUTION
+ *   TRUNCATED FROM ABOVE BY GIVEN BOUND 'b'
+   Draws y ~ Norm( mu, sigma^2 )  s.t.   -Inf <= y <= b
+   Uses numerical methods based on inverting normal CDF
+     unless truncated region is so far (>5*sigma) away from the mean
+     that these methods become unstable 
+   In these extreme cases, uses a rejection sampler with assymptotically 
+     perfect acceptance rates as distance from mean increases. 
+ * See http://web.michaelchughes.com/research/sampling-from-truncated-normal
+    and references therein
+ */
 double randn_trunc_above( double mu, double sigma, double b ) {
   if ( mu - b > 5*sigma  ) {
     return mu - sigma*randn_trunc_tail_rejection(  (mu-b)/sigma  );
@@ -106,6 +135,20 @@ double randn_trunc_above( double mu, double sigma, double b ) {
   }
 }
 
+
+
+/* =================================================================
+ * GENERIC SAMPLING FROM THE 1D NORMAL DISTRIBUTION
+ *   TRUNCATED FROM BELOW BY GIVEN BOUND 'a'
+   Draws y ~ Norm( mu, sigma^2 )  s.t.   a <= y <= +Inf
+   Uses numerical methods based on inverting normal CDF
+     unless truncated region is so far (>5*sigma) away from the mean
+     that these methods become unstable 
+   In these extreme cases, uses a rejection sampler with assymptotically 
+     perfect acceptance rates as distance from mean increases. 
+ * See http://web.michaelchughes.com/research/sampling-from-truncated-normal
+    and references therein
+ */
 double randn_trunc_below( double mu, double sigma, double a ) {
   if ( a - mu > 5*sigma  ) {
     return mu + sigma*randn_trunc_tail_rejection(  (a-mu)/sigma  );
@@ -116,6 +159,12 @@ double randn_trunc_below( double mu, double sigma, double a ) {
   }
 }
 
+
+/* =================================================================
+ * REJECTION SAMPLING FROM TAIL OF THE 1D NORMAL DISTRIBUTION
+ * see http://web.michaelchughes.com/research/sampling-from-truncated-normal
+    and references therein
+ */
 double randn_trunc_tail_rejection( double a ) {
  double u, w, x;
   do {

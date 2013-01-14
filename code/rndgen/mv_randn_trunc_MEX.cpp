@@ -1,20 +1,40 @@
 /*
- * sampleTopicsForDoc_LDA_DirMult.cpp
+ * mv_randn_trunc_MEX.cpp
  DESCRIPTION  -----------------------------------------------------
    MEX function for sampling from a multivariate truncated normal distribution
-       y ~ Normal( mu, eye ) restricted s.t.
-            y[dim] is the largest entry of y
-            e.g. y[dim] > y[d] for every d != dim
+       y ~ TruncNormal_d( mu, eye(D) ) is a D dimensional vector restricted s.t.
+            y[d] is the largest entry of y
+            i.e. y[d] >= y[d'] for every d' != d
+ USAGE
+    Matlab Syntax:
+      Y = mv_randn_trunc_MEX( mu, dim, Nsamps, seed )
+ INPUT   ------------------------------------------------------
+    mu     :  Dx1 column vector
+    dim    :  integer within [1,2,...D] indicates dimension for truncation
+    Nsamps :  integer number of samples to draw from trunc. normal distr.
+    SEED   :  integer seed for random number generator
+ OUTPUTS    -------------------------------------------------------
+    Y     :  (DxNsamps) matrix
+                each column Y(:,n) is a sample from the trunc. normal. distr.
  METADATA  --------------------------------------------------------
    Author: Mike Hughes ( mhughes@cs.brown.edu )
    Date:  11 January 2013
- INPUT   ------------------------------------------------------
- 
-    SEED   :  Integer seed for random number generator
- OUTPUTS    -------------------------------------------------------
-    ys     :  (Nx1) Matlab vector of 
+ RUNTIME ADVICE
+   Weird matlab errors even after successful compilation?
+   Restart matlab with a pointer to the system's standard c++ library:
+      >> LD_PRELOAD=/usr/lib/libstdc++.so.6 matlab
+   This overrides the default matlab library, and allow
  COMPILATION ------------------------------------------------------
-   mex -I<path/to>/SuperTopics/rndgen/ sampleTopicsForDoc_LDA_DirMult.cpp
+   mex -I<path/to>/boost/    \     (not needed in some cases)
+       -I<path/to>/Eigen/    \
+       mv_randn_trunc_MEX.cpp
+   relies on mersenneTwister2002.c in same directory when mexified.
+ DEPENDENCIES       -----------------------------------------------
+   Eigen : allows matrix manipulations for this multivariate distribution
+           see http://eigen.tuxfamily.org/
+   Boost : trustworthy implementation of math special functions
+               erf/erfc/inverf for use in approximating NormalCDF
+           see http://www.boost.org/
  ACKNOWLEDGEMENTS   -----------------------------------------------
    Makoto Matsumoto and Takuji Nishimura for excellent basic rand generator
    see  ( mersenneTwister2002.c ) for details
@@ -31,7 +51,6 @@
 using namespace std;
 
 #define SQRT2  1.41421356237309504
-#define pi (3.141592653589793)
 #define EPS (.000000000001)  // 1e-12
 
 /* Input Arguments */
@@ -66,13 +85,16 @@ double mynormcdf( double );
 
 void randperm( int, int*);
 
-int Nburn = 3;
+int Nburn = 3; // # samples to discard as we wander from initial configuration
 
 /* =================================================================
- *                    GATEWAY FUNCTION
- * Syntax:
-
- * =================================================================
+                     GATEWAY FUNCTION
+   Matlab Syntax:
+      Y = mv_randn_trunc_MEX( mu, 3, Nsamps, seed );
+   Requires 4 input args, 1 output arg
+   This inputs are given macro names like "y_OUT" and "mu_IN"
+     in the definitions at the top of this code file
+   =================================================================
  */
 void mexFunction (int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[]) {
 
@@ -92,15 +114,12 @@ void mexFunction (int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[]) {
   int dim    = mxGetScalar( dim_IN );
   dim = dim -1; // go to zero-based in index here in C++ land
   if (dim < 0 || dim >= muR) {
-    mexErrMsgTxt("Target dimension outside valid range.  Needs to be in 1...length(mu).\n");
+    mexErrMsgTxt("Target dimension outside valid range.  Needs to be within {1,2,...length(mu)}.\n");
   }
-
 
   int Nsamps = mxGetScalar( Nsamps_IN );
   int SEED   = mxGetScalar( SEED_IN );
-
-  // Initialize random seed --------------------------------------------
-  init_genrand( SEED );
+  init_genrand( SEED ); // call to setup our PRNG: mersenneTwister2002.c
 
 	Eigen::Map<VectorType> mu( mxGetPr(mu_IN), muR);
 
@@ -118,14 +137,21 @@ void mexFunction (int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[]) {
     
   }
 
+  // Translate the Eigen matrix collecting our output samples 
+  //  into the right matlab format
 	y_OUT = mxCreateDoubleMatrix( muR, Nsamps, mxREAL);
 	memcpy( mxGetPr( y_OUT ), yKeep.data(), muR*Nsamps*sizeof(double));
 
 }
 
+/* =================================================================
+   COMPUTE THE MAXIMUM VALUE OF ENTRIES IN VECTOR y
+     IGNORING PARTICULAR DIMENSION targetDim
+   Routine function used by the Gibbs sampler to 
+ */
 double get_max_value_ignore_dim( VectorType& y, int targetDim) {
   int D = (int) y.size();
-  double maxval = -1000.0;
+  double maxval = -1 * numeric_limits<double>::max(); //very small value
   for (int dd=0; dd < D; dd++) {
     if (dd == targetDim) {
       continue;
@@ -137,6 +163,15 @@ double get_max_value_ignore_dim( VectorType& y, int targetDim) {
   return maxval;
 }
 
+/* =================================================================
+   GIBBS SAMPLER ALGORITHM TO DRAW A NEW VECTOR "y" ~ TruncNormal of dimension D
+       GIVEN PREVIOUS VECTOR "y" AS INPUT
+   Visits each entry in y in random order, 
+     and resamples that entry using efficient 1D truncated normal sampling routines.
+   When we visit the *target* dimension,
+     we enforce that it must be larger than the maximum of all other entries
+   Otherwise, we visit other dimensions and enforce that they must be smaller than y[target]
+ */
 void gibbs_sample_mv_randn_trunc( VectorType& y, const Eigen::Map<VectorType>& mu, int targetDim) {
   int D = (int) mu.size();
   double maxOthers;
@@ -156,6 +191,18 @@ void gibbs_sample_mv_randn_trunc( VectorType& y, const Eigen::Map<VectorType>& m
   perm = NULL;
 }
 
+/* =================================================================
+ * GENERIC SAMPLING FROM THE 1D NORMAL DISTRIBUTION
+ *   TRUNCATED FROM ABOVE BY GIVEN BOUND 'b'
+   Draws y ~ Norm( mu, sigma^2 )  s.t.   -Inf <= y <= b
+   Uses numerical methods based on inverting normal CDF
+     unless truncated region is so far (>5*sigma) away from the mean
+     that these methods become unstable 
+   In these extreme cases, uses a rejection sampler with assymptotically 
+     perfect acceptance rates as distance from mean increases. 
+ * See http://web.michaelchughes.com/research/sampling-from-truncated-normal
+    and references therein
+ */
 double randn_trunc_above( double mu, double sigma, double b ) {
   if ( mu - b > 5*sigma  ) {
     return mu - sigma*randn_trunc_tail_rejection(  (mu-b)/sigma  );
@@ -166,6 +213,18 @@ double randn_trunc_above( double mu, double sigma, double b ) {
   }
 }
 
+/* =================================================================
+ * GENERIC SAMPLING FROM THE 1D NORMAL DISTRIBUTION
+ *   TRUNCATED FROM BELOW BY GIVEN BOUND 'a'
+   Draws y ~ Norm( mu, sigma^2 )  s.t.   a <= y <= +Inf
+   Uses numerical methods based on inverting normal CDF
+     unless truncated region is so far (>5*sigma) away from the mean
+     that these methods become unstable 
+   In these extreme cases, uses a rejection sampler with assymptotically 
+     perfect acceptance rates as distance from mean increases. 
+ * See http://web.michaelchughes.com/research/sampling-from-truncated-normal
+    and references therein
+ */
 double randn_trunc_below( double mu, double sigma, double a ) {
   if ( a - mu > 5*sigma  ) {
     return mu + sigma*randn_trunc_tail_rejection(  (a-mu)/sigma  );
@@ -176,6 +235,11 @@ double randn_trunc_below( double mu, double sigma, double a ) {
   }
 }
 
+/* =================================================================
+ * REJECTION SAMPLING FROM TAIL OF THE 1D NORMAL DISTRIBUTION
+ * see http://web.michaelchughes.com/research/sampling-from-truncated-normal
+    and references therein
+ */
 double randn_trunc_tail_rejection( double a ) {
  double u, w, x;
   do {
