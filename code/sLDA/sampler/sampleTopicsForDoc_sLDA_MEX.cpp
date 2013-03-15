@@ -12,7 +12,10 @@
  *   Date:  24 June 2011
  * INPUT   ------------------------------------------------------
  *    ws     :  (1xNd) Matlab row vector of vocab word IDs observed in this document
+ *    y      :  (1xC)  Matlab row vector of observed/hidden real response variable
  *    zs     :  (1xNd) Matlab row vector of current topic assignments for this document
+ *    eta    :  (KxC)  Regression weight vector
+ *    lambda :  (1x1) scalar precision parameter [only used for regression]
  *    Ndk    :  (1xK) Matlab matrix storing document-topic counts
  *                 In Matlab,  Ndk(k)  yields # tokens in doc d asgnd to topic k
  *    Nkt    :  (KxV) Matlab matrix storing topic-term counts

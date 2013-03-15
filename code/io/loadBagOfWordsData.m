@@ -34,8 +34,14 @@ if ~isempty( strfind(dataN, 'bars' ))
     end
     
 elseif ~isempty( matFilePath )
-    Data = load(  matFilePath );
-    Data = Data.Data;
+    
+    [~,~,ext] = fileparts( matFilePath );
+    if strcmp( ext, '.mat' )
+        Data = load(  matFilePath );
+        Data = Data.Data;
+    else
+        Data = importdata( matFilePath );
+    end
     
     if isnumeric( Data )
        Dstruct = struct();
