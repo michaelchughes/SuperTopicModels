@@ -86,3 +86,13 @@ fprintf( '  what matters: *aligned* topics consistently assigned to same datapoi
 fprintf( 'Some tools in viz/ directory can aid visualization of sim results.\n');
 fprintf( ' Here is a movie of the previous simulation.\n' );
 plotEmissionParamsOverTime( 1, 1 );
+
+
+
+
+fprintf('Variables TrainData, TestData, and prior model are now in workspace, so you can look at the data format and hyperparam format in detail.\n');
+% To facilitate inspection...
+INFO = loadSamplerInfo( jobID, taskID );
+TrainData = INFO.Data;
+TestData  = INFO.TestData;
+model = INFO.model; % trained model.  RegM is the regression prior model (normal on weight vector eta, gamma on precision lambda)
