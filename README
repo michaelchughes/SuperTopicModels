@@ -4,16 +4,46 @@ Author:  Mike Hughes (www.michaelchughes.com)
 Please email all comments/questions to mike <AT> michaelchughes.com
 
 This toolbox provides code for running Markov chain Monte Carlo (MCMC) posterior
-inference for a variety of topic models, including latent dirichlet allocation (LDA)
-and *supervised* latent dirichlet allocation (sLDA).    
+inference for a variety of topic models, including latent Dirichlet allocation (LDA) and *supervised* latent Dirichlet allocation (sLDA).    
+
+QUICK START
 
 The repository is organized as follows:  
   code/ contains relevant Matlab code. This should be the working dir in Matlab.
-        within code/, you can find a fast intro script in code/demo/EasyDemo.m
-  doc/  contains human-readable documentation.
-        QuickStartGuide.pdf in particular describes how to configure the code.
-  data/ contains one example dataset
-        See the demos for how to run posterior inference on this data. 
+    code/demo/  contains heavily-commented intro scripts for how to do:
+       (1) basic unsupervised LDA training (EasyDemo)
+       (2) LDA + regression prediction (DemoRegression_LDA)
+          sLDA + regression prediction (DemoRegressoin_sLDA)
+       (3) LDA + binary classification (DemoBinaryClassifier_LDA)
+          sLDA + binary classification (DemoBinaryClassifier_sLDA)
+
+Most core sampling routines are implemented as fast MEX C++ code.  
+  To compile these, simply run ConfigToolbox.m first.  Then run any demos.
+
+DATA FORMAT
+Entire dataset is a big struct array, where each document "d" has
+  words (as a vector of unique term ids) 
+        Data(d).words
+  target variable (either real-valued, binary, or one-of-K)
+        Data(d).y
+
+To understand the data, inspect the "TrainData" and "TestData" variables left in your workspace after any of the demos.
+Alternatively, see the genSynthData* functions, which build toy datasets.
+
+To use your own dataset, you can create the structs and save them as "MyCustomTrainData.mat" and "MyCustomTestData.mat".
+  Then, simply call runLDA or runSuperLDA with {'/full/path/to/MyCustomTrainData.mat'} as first argument.
+Of course, you can name the file whatever you want, not just "MyCustom...".
+
+DEPENDENCIES
+  The toolbox works stand-alone for both regression and binary classification.
+  For multi-class classification, the fast MEX truncated normal sampling routines in code/rndgen/
+     require both the Eigen and Boost C++ libraries.
+  Create environment variables that point to the install directories, called
+     EIGENPATH and BOOSTPATH
+  In Matlab, this can be done simply by running
+     setenv( 'EIGENPATH', '/path/to/eigen/on/my/system/');
+  Alternatively, there is native matlab code included, but it is very very slow.
+
               
 Look for additional documentation and occasional updates on github:
    https://github.com/michaelchughes/NPBayesHMM/

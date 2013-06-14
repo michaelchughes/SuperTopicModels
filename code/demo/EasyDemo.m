@@ -8,7 +8,6 @@
 %       This is just a one-line plain text file that contains
 %         a valid absolute file path to where you'd like to store results
 %       >> echo "path/to/my/result/directory/" > SimulationResults.path
-% See QuickStartGuide.pdf in doc/ for details on configuring the toolbox
 
 clear variables;
 close all;
@@ -18,7 +17,7 @@ close all;
 ConfigToolbox;
 
 % -------------------------------------------------   CREATE TOY DATA!
-fprintf( 'Creating some toy data...\n' );
+fprintf( 'Creating some toy bars data, just like in Griffiths and Steyvers "Finding Scientific Topics" paper\n' );
 % First, we'll create some toy data
 %   D=500 documents, each with Nd=100 words
 % Data : struct array where

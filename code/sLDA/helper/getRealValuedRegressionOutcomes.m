@@ -22,13 +22,25 @@ else
 end
 D =size(yorig, 1);
 
+seeds = randint( D,1, [0 1e5]); % get D rand ints, each within [0,1e5]
+
 if model.RegM.doBinary
-    for dd = 1:D
-        ybar(dd) = randn_trunc( barZ(dd,:)*eta, 1, yorig(dd) );
+    for dd = 1:D        
+        % FAST WAY with MEX
+        ybar(dd) = randn_trunc_MEX( barZ(dd,:)*eta, 1, yorig(dd), 2, seeds(dd) );
+        
+        % SLOW WAY with pure matlab
+        %ybar(dd) = randn_trunc( barZ(dd,:)*eta, 1, yorig(dd) );
     end
 elseif model.RegM.doMultiClass
     for dd = 1:D
-           ybar(dd,:) = mv_randn_trunc( (barZ(dd,:)*eta)',  yorig(dd) );
+        % FAST WAY with MEX
+        % sometimes this line gives funny errors.
+        %  Contact Mike for debug advice
+        ybar(dd,:) = mv_randn_trunc_MEX( (barZ(dd,:)*eta)', yorig(dd), 1, seeds(dd) );
+        
+        % SLOW WAY with pure matlab
+        %ybar(dd,:) = mv_randn_trunc( (barZ(dd,:)*eta)',  yorig(dd) );
     end
 else
     ybar = yorig;
